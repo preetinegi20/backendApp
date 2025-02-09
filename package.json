@@ -5,9 +5,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "preview": "vite preview",
-    "start": "nodemon index.js"
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "preview": "vite preview"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
