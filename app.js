@@ -8,39 +8,44 @@ import cookieParser from "cookie-parser";
 dotenv.config();
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(cookieParser());
+// ✅ CORS Configuration
+const allowedOrigins = [
+  "https://67a9ce11b3b13e68d9034200--newsfullstack.netlify.app",
+  "http://localhost:5173", // Include if testing locally
+];
 
 app.use(
   cors({
-    origin: ["https://67a9ce11b3b13e68d9034200--newsfullstack.netlify.app"],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true, // ✅ Allows cookies/auth headers
     methods: "GET, POST, PUT, DELETE, OPTIONS",
     allowedHeaders: "Content-Type, Authorization",
   })
 );
 
-// ✅ Ensure preflight requests are handled
+// ✅ Handle Preflight Requests
 app.options("*", cors());
 
-// ✅ Register routes BEFORE starting the server
+app.use(express.json());
+app.use(cookieParser());
+
+// ✅ Ensure Routes Are Loaded Before Server Starts
 app.use("/api", userRouter);
 
-let mongodburl = `${process.env.DB_CONNECT}`;
-let connectDB = async () => {
-  await mongoose.connect(mongodburl);
-  console.log("Connected to MongoDB successfully");
-};
-
-app.get("/", (req, res) => {
-  res.send("Backend is running successfully!");
-});
-
-// ✅ Start server AFTER DB is connected
+// ✅ Start Server After DB Connects
 const PORT = process.env.PORT || 5000;
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-});
+mongoose
+  .connect(process.env.DB_CONNECT)
+  .then(() => {
+    console.log("Connected to MongoDB successfully");
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => console.log("DB Connection Error:", err));
