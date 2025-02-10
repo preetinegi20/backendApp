@@ -14,7 +14,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: ["https://frontend-ev2fqp3nl-preetinegi20s-projects.vercel.app"],
+    origin: ["https://67a9ce11b3b13e68d9034200--newsfullstack.netlify.app"],
     credentials: true, // Allow credentials (cookies, authorization headers)
   })
 );
