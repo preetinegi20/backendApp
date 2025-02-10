@@ -16,8 +16,11 @@ app.use(
   cors({
     origin: ["https://67a9ce11b3b13e68d9034200--newsfullstack.netlify.app"],
     credentials: true, // Allow credentials (cookies, authorization headers)
+    methods: "GET, POST, PUT, DELETE, OPTIONS",
+    allowedHeaders: "Content-Type, Authorization",
   })
 );
+app.options("*", cors());
 app.use(cookieParser());
 let mongodburl = `${process.env.DB_CONNECT}`;
 let connectDB = async () => {
