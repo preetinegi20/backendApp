@@ -9,28 +9,46 @@ dotenv.config();
 const app = express();
 
 // ✅ CORS Configuration
+
 const allowedOrigins = [
   "https://67a9ce11b3b13e68d9034200--newsfullstack.netlify.app",
-  "http://localhost:5173", // Include if testing locally
+  "http://localhost:5173",
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.log("Blocked CORS Request from:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true, // ✅ Allows cookies/auth headers
-    methods: "GET, POST, PUT, DELETE, OPTIONS",
-    allowedHeaders: "Content-Type, Authorization",
+    credentials: true, // 🔥 Required for sending cookies
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 // ✅ Handle Preflight Requests
-app.options("*", cors());
+app.options("*", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.status(204).end(); // No content response (important)
+});
+
+app.use((req, res, next) => {
+  console.log("Incoming Request:", req.method, req.url);
+  console.log("Origin:", req.headers.origin);
+  console.log("Headers:", req.headers);
+  next();
+});
 
 app.use(express.json());
 app.use(cookieParser());
