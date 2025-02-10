@@ -24,10 +24,10 @@ let connectDB = async () => {
   await mongoose.connect(mongodburl);
   console.log("Connected to MongoDB successfully");
 };
-
+const PORT = process.env.PORT || 5000;
 app.use("/api", userRouter);
 connectDB().then(() => {
-  app.listen(process.env.PORT || 5000, () => {
+  app.listen(PORT, () => {
     console.log(`Server running on port ${process.env.PORT || 5000}`);
   });
 });
