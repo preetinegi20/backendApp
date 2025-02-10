@@ -24,6 +24,10 @@ let connectDB = async () => {
   await mongoose.connect(mongodburl);
   console.log("Connected to MongoDB successfully");
 };
+app.get("/", (req, res) => {
+  res.send("Backend is running successfully!");
+});
+
 const PORT = process.env.PORT || 5000;
 app.use("/api", userRouter);
 connectDB().then(() => {
