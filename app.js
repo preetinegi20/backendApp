@@ -11,7 +11,7 @@ const app = express();
 // ✅ CORS Configuration
 
 const allowedOrigins = [
-  " https://67aa594b59d43400084ba95c--newsfullstack.netlify.app",
+  "https://67ab0f01ace7c600082accd0--newsfullstack.netlify.app",
   "http://localhost:5173",
 ];
 
