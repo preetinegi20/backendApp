@@ -28,34 +28,34 @@ const loginUser = asyncHandler(async (req, res) => {
     return res.status(401).json(new ApiError(401, "email is not found"));
 
   const isPassCorrect = await user.isPassCorrect(password);
-  console.log("input pass: ", password);
   if (!isPassCorrect)
     return res.status(401).json(new ApiError(401, "incorrect password"));
 
   const { accessToken, refreshToken } =
     await generateAccessTokenANDRefreshToken(user._id);
-
-  console.log("accessToken", refreshToken);
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken"
   ); //extracting the whole user field excluding pass anf rt
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "None",
   };
+  // console.log(user);
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
-        200,
+        200, //statuscode
         {
+          //data
           user: loggedInUser,
-          accessToken: accessToken,
-          refreshToken: refreshToken,
+          accessToken,
+          refreshToken,
         },
-        "user logged in successfully"
+        "user logged in successfully" //msg
       )
     );
 });
