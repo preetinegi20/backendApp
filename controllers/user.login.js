@@ -38,8 +38,13 @@ const loginUser = asyncHandler(async (req, res) => {
   ); //extracting the whole user field excluding pass anf rt
   const options = {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    secure: true, //  for production
+    sameSite: "None", // for cross-origin
+    path: "/",
+    domain:
+      process.env.NODE_ENV === "production"
+        ? "backendapp-18bz.onrender.com" // Make sure this matches your API domain
+        : "localhost",
   };
   // console.log(user);
   return res

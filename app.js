@@ -15,23 +15,28 @@ app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   "https://67b4ae9630252f000893eb08--newsfullstack.netlify.app",
   "https://backendapp-18bz.onrender.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        // console.log("Blocked CORS Request from:", origin);
-        callback(new Error("Not allowed by CORS"));
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) === -1) {
+        return callback(new Error("CORS not allowed"), false);
       }
+      return callback(null, true);
     },
-    credentials: true, // 🔥 Required for sending cookies
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Set-Cookie"],
   })
 );
+app.options("*", cors());
 
 app.get("/news", async (req, res) => {
   try {
