@@ -14,7 +14,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   "https://67b4ae9630252f000893eb08--newsfullstack.netlify.app",
-  "https://67b4cf0ce9be33088c40f545--newsfullstack.netlify.app/login",
+  "https://67b4cf0ce9be33088c40f545--newsfullstack.netlify.app",
   "https://backendapp-18bz.onrender.com",
   "http://localhost:5173",
   "http://localhost:3000",
@@ -23,11 +23,14 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.indexOf(origin) === -1) {
-        return callback(new Error("CORS not allowed"), false);
+        console.log("Blocked origin:", origin); // Add this for debugging
+        return callback(
+          new Error(`CORS not allowed for origin: ${origin}`),
+          false
+        );
       }
       return callback(null, true);
     },
