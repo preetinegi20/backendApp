@@ -13,7 +13,7 @@ app.use(cookieParser());
 
 app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
-  "https://67a9ce11b3b13e68d9034200--newsfullstack.netlify.app",
+  "https://67b4ae9630252f000893eb08--newsfullstack.netlify.app/",
   "https://backendapp-18bz.onrender.com",
 ];
 
