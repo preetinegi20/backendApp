@@ -16,8 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS Configuration
 const allowedOrigins = [
-  "https://67b4d62335d27e2bd3177e7c--newsfullstack.netlify.app",
-  "https://67b4cf0ce9be33088c40f545--newsfullstack.netlify.app",
+  "https://67b5deaac9c81100083b76de--newsfullstack.netlify.app",
   "https://backendapp-18bz.onrender.com",
   "http://localhost:5173",
   "http://localhost:3000",
