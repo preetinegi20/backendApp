@@ -5,13 +5,16 @@ import dotenv from "dotenv";
 import userRouter from "./routes/user.js";
 import cookieParser from "cookie-parser";
 import axios from "axios";
+
 dotenv.config();
 const app = express();
 
+// Basic middleware
 app.use(express.json());
 app.use(cookieParser());
-
 app.use(express.urlencoded({ extended: true }));
+
+// CORS Configuration
 const allowedOrigins = [
   "https://67b4d62335d27e2bd3177e7c--newsfullstack.netlify.app",
   "https://67b4cf0ce9be33088c40f545--newsfullstack.netlify.app",
@@ -20,199 +23,136 @@ const allowedOrigins = [
   "http://localhost:3000",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) === -1) {
-        console.log("Blocked origin:", origin); // Add this for debugging
-        return callback(
-          new Error(`CORS not allowed for origin: ${origin}`),
-          false
-        );
-      }
-      return callback(null, true);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Set-Cookie"],
-  })
-);
-app.options("*", cors());
+    if (allowedOrigins.indexOf(origin) === -1) {
+      console.log("Blocked origin:", origin);
+      return callback(new Error("CORS policy restriction"), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  exposedHeaders: ["Set-Cookie"],
+  maxAge: 86400,
+};
 
-app.get("/news", async (req, res) => {
+app.use(cors(corsOptions));
+
+// News API endpoint with error handling
+app.get("/news", async (req, res, next) => {
   try {
     const { category, author, startDate, endDate } = req.query;
 
-    // Construct the NewsAPI request
     const response = await axios.get("https://newsapi.org/v2/everything", {
       params: {
-        q: category || "technology", // Use category as the search term
+        q: category || "technology",
         apiKey: process.env.NEWS_API_KEY,
         language: "en",
         sortBy: "publishedAt",
         ...(startDate && { from: startDate }),
         ...(endDate && { to: endDate }),
       },
+      timeout: 5000, // 5 second timeout
     });
 
     let articles = response.data.articles;
 
-    // Apply additional filters
     if (author) {
       articles = articles.filter((item) =>
         item.author?.toLowerCase().includes(author.toLowerCase())
       );
     }
 
-    res.json({ articles });
-  } catch (error) {
-    console.error(
-      "Error fetching news:",
-      error.response?.data || error.message
-    );
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data || "Server error",
+    res.json({
+      success: true,
+      articles,
     });
+  } catch (error) {
+    next(error); // Pass to error handler
   }
 });
 
-// app.get("/news", async (req, res) => {
-//   try {
-//     const { category, author, startDate, endDate } = req.query;
+// API routes
+app.use("/api", userRouter);
 
-//     const response = await axios.get("http://newsapi.org/v2/everything?", {
-//       params: {
-//         q: category || "",
-//         ...(startDate && { from: startDate }),
-//         ...(endDate && { to: endDate }),
-//         apiKey: process.env.NEWS_API_KEY,
-//         // Add date range to API query if provided
-//       },
-//     });
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
 
-//     let articles = response.data.articles;
+  // Handle CORS errors
+  if (err.message.includes("CORS")) {
+    return res.status(403).json({
+      success: false,
+      message: "CORS policy restriction",
+      error: err.message,
+    });
+  }
 
-//     // Filter by author if provided
-//     if (author) {
-//       articles = articles.filter((item) =>
-//         item.author?.toLowerCase().includes(author.toLowerCase())
-//       );
-//     }
+  // Handle Axios errors
+  if (axios.isAxiosError(err)) {
+    return res.status(err.response?.status || 500).json({
+      success: false,
+      message: "External API error",
+      error: err.response?.data || err.message,
+    });
+  }
 
-//     // Additional date filtering if needed
-//     if (startDate || endDate) {
-//       articles = articles.filter((item) => {
-//         const articleDate = new Date(item.publishedAt);
-//         const start = startDate ? new Date(startDate) : null;
-//         const end = endDate ? new Date(endDate) : null;
+  // Handle Mongoose errors
+  if (err instanceof mongoose.Error) {
+    return res.status(400).json({
+      success: false,
+      message: "Database error",
+      error: err.message,
+    });
+  }
 
-//         return (!start || articleDate >= start) && (!end || articleDate <= end);
-//       });
-//     }
+  // Handle validation errors
+  if (err.name === "ValidationError") {
+    return res.status(400).json({
+      success: false,
+      message: "Validation error",
+      error: err.message,
+    });
+  }
 
-//     res.json({ articles });
-//   } catch (error) {
-//     console.log(req.query);
-//     console.error(
-//       "Error fetching news:",
-//       error.response?.data || error.message
-//     );
-//     res.status(error.response?.status || 500).json({
-//       error: error.response?.data || "Server error",
-//     });
-//   }
-// });
-
-// app.get("/news", async (req, res) => {
-//   try {
-//     const { category, author, startDate, endDate } = req.query;
-
-//     const response = await axios.get("http://newsapi.org/v2/everything?", {
-//       params: {
-//         // country: "us",
-//         q: category || "", // Example: "sports", "business", "technology"
-//         // publishedAt: publishedAt,
-//         apiKey: process.env.NEWS_API_KEY,
-//       },
-//     });
-//     // console.log(response.data);
-//     let articles = response.data.articles;
-
-//     console.log(articles);
-//     // 🔹 Filter by author
-//     if (author) {
-//       articles = articles.filter((item) => {
-//         return item.author?.toLowerCase().includes(author.toLowerCase());
-//       });
-//     }
-
-//     // 🔹 Filter by start date
-//     if (startDate) {
-//       articles = articles.filter((item) => {
-//         return new Date(item.publishedAt) >= new Date(startDate); //later than
-//       });
-//     }
-
-//     // 🔹 Filter by end date
-//     if (endDate) {
-//       articles = articles.filter(
-//         (item) => new Date(item.publishedAt) <= new Date(endDate) // before than
-//       );
-//     }
-
-//     res.json({ articles });
-//   } catch (error) {
-//     console.error(
-//       "Error fetching news:",
-//       error.response?.data || error.message
-//     );
-//     res.status(error.response?.status || 500).json({
-//       error: error.response?.data || "Server error",
-//     });
-//   }
-// });
-
-// ✅ Handle Preflight Requests
-app.options("*", (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.status(204).end(); // No content response (important)
+  // Default error
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal server error",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  });
 });
 
-// ✅ Ensure Routes Are Loaded Before Server Starts
-app.use("/api", userRouter);
-// app.use((err, req, res, next) => {
-//   req.setTimeout(5000); // 10 second timeout
-//   console.error("Uncaught error:", err); // Log the error details
-
-//   // Check if there's a custom status code and message
-//   const statusCode = err.statusCode || 500;
-//   const message = err.message || "Internal Server Error";
-
-//   // Send JSON response
-//   res.status(statusCode).json({
-//     message,
-//     error: err.stack, // Include the error stack for debugging
-//   });
-//   next();
-// });
-
-// ✅ Start Server After DB Connects
+// Database connection and server start
 const PORT = process.env.PORT || 5000;
+
 mongoose
-  .connect(process.env.DB_CONNECT)
+  .connect(process.env.DB_CONNECT, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+  })
   .then(() => {
     console.log("Connected to MongoDB successfully");
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
-  .catch((err) => console.log("DB Connection Error:", err));
+  .catch((err) => {
+    console.error("DB Connection Error:", err);
+    process.exit(1);
+  });
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received. Shutting down gracefully");
+  mongoose.connection.close(false, () => {
+    console.log("MongoDB connection closed");
+    process.exit(0);
+  });
+});
