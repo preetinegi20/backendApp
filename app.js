@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   "https://newsfullstack.netlify.app",
   "https://backendapp-18bz.onrender.com",
-  "http://localhost:5173",
+  "http://localhost:5174",
   "http://localhost:3000",
 ];
 
